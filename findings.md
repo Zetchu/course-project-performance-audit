@@ -9,6 +9,12 @@
 - **The Cause:** The application document is excessively large because it relies on legacy architectural methods optimized for old HTTP/1 protocols. Specifically, an entire 70 KB static SVG icon map asset is directly inlined into the HTML code, increasing data weight and forcing the browser parsing thread to stall initial render loops.
 - **The Solution:** Restructure the primary codebase to exploit modern HTTP/2 protocol advantages. Eliminate large inlined text modules, stop excessive JavaScript/CSS bundling patterns, and offload the 70 KB icon map into an isolated, cached external resource file.
 
+- **Prioritization (ICE):**
+  - **Impact:** 8 (Slashes the heavy 6.9s initial mobile rendering delay)
+  - **Confidence:** 9 (Isolating static text matrices is a core performance rule)
+  - **Ease:** 4 (Requires adjusting build bundle compilation targets)
+  - **ICE Score:** 288
+
 ### Finding 2: Lack of Image Fetch Prioritization & Unoptimized Video Blocks
 
 - **How it affects users:** Critical above-the-fold narrative imagery loads slowly or appears late, leaving users unable to quickly tell if the headline content has finished loading.
@@ -16,12 +22,24 @@
 - **The Cause:** The frontend template lacks priority indicators for above-the-fold content. The main headline image is fetched in parallel with secondary and tertiary assets lower on the page, rather than loading sequentially. Compounding this, the primary hero article asset is an embedded video player that initiates network calls instantly rather than loading a placeholder image.
 - **The Solution:** Add explicit `fetchpriority="high"` HTML attributes onto primary, visible article images to prioritize them over secondary resources. Replace autoplaying inline hero video loops with a static preview image container, deferring heavy video rendering scripts until the user explicitly clicks a play trigger.
 
+- **Prioritization (ICE):**
+  - **Impact:** 10 (Targets the catastrophic 40.3s LCP threshold mobile failure directly)
+  - **Confidence:** 10 (Native attribute scheduling controls are highly predictable)
+  - **Ease:** 7 (Straightforward markup tagging combined with hero image component configurations)
+  - **ICE Score:** 700
+
 ### Finding 3: Visual Disruption via Unbounded Structural Ad Blocks
 
 - **How it affects users:** The structural layout of the platform appears broken or blank for several seconds upon arrival, as text columns violently shift position once the slow top-of-page advertising units finish loading.
 - **Metric(s) affected:** Speed Index (SI), Cumulative Layout Shift (CLS), and First Contentful Paint (FCP).
 - **The Cause:** Top-of-page display advertising slots are treated as dynamic runtime blocks that lack fixed dimensions in the layout. Because these scripts execute late in the rendering lifecycle, the layout leaves a blank space that causes content to shift when elements are injected above the fold.
 - **The Solution:** Relocate programmatic display blocks lower down the layout tree (below the fold). If a top ad block is strictly necessary for monetization, reserve fixed aspect-ratio container heights using explicit CSS styling rules to prevent content shifts when the ad asset renders.
+
+- **Prioritization (ICE):**
+  - **Impact:** 7 (Drastically reduces unexpected template shifts)
+  - **Confidence:** 9 (Bounding boxes reliably trap shifts)
+  - **Ease:** 8 (Simple inclusion of aspect-ratio rules inside core component stylesheets)
+  - **ICE Score:** 504
 
 ---
 
@@ -34,6 +52,12 @@
 - **The Cause:** The primary page initiates a massive volume of network requests (up to 969 targets on desktop), resulting in over 7.5 MB of JavaScript and CSS code parsing. A high concentration of these scripts are inlined third-party trackers, analytics, and marketing tags that execute synchronously, blocking the browser's main thread.
 - **The Solution:** Conduct a tag audit to prune redundant third-party scripts. Shift marketing trackers into modern tag management workflows that employ non-blocking asynchronous script execution (`async` or `defer`), preventing them from competing with core layout rendering loops.
 
+- **Prioritization (ICE):**
+  - **Impact:** 9 (Frees up the heavily congested browser thread processing)
+  - **Confidence:** 8 (Requires post-deployment validation to guarantee third-party marketing tags capture data accurately)
+  - **Ease:** 5 (Demands code tag audits and coordination across departments)
+  - **ICE Score:** 360
+
 ### Finding 5: High Transactional Viewport Instability (Donate Page Deficit)
 
 - **How it affects users:** Users attempting to fill out donation fields or click payment buttons frequently misclick as elements unexpectedly jump around, causing frustration and directly hurting conversion rates.
@@ -41,9 +65,21 @@
 - **The Cause:** The transactional portal page (`/donate`) loads heavy form scripts, external payment portal elements, and security validation frames dynamically without predefined layout boxes. As these secure modules finish loading across the network, they push the text inputs down, destabilizing the visual hierarchy.
 - **The Solution:** Apply explicit minimum height values (`min-height`) via CSS to container elements holding the payment and validation forms. This ensures the layout reserves space for these modules before they finish downloading, stabilizing the page.
 
+- **Prioritization (ICE):**
+  - **Impact:** 9 (Completely fixes the severe 0.76 red shift metric on the high-value transaction page)
+  - **Confidence:** 10 (Reserving viewport heights is an infallible fix for layout shift)
+  - **Ease:** 9 (Extremely simple localized front-end CSS adjustment)
+  - **ICE Score:** 810
+
 ### Finding 6: Absolute Binary Asset Compression Deficiency
 
 - **How it affects users:** Mobile data plans are consumed quickly by repetitive downloads, and images load systematically slower over cellular network handshakes.
 - **Metric(s) affected:** Speed Index (SI), Data Transfer Volume, and Largest Contentful Paint (LCP).
 - **The Cause:** While text assets compress effectively via modern GZIP/Brotli pipelines, binary media representations (accounting for over 14.7 MB on desktop and 7.4 MB on mobile layouts) lack network compression rules. The platform delivers legacy media variants without formatting them into modern containers.
 - **The Solution:** Deploy automated server-side transformation pipelines to serve all graphic content in modern compressed containers like WebP or AVIF. This structural conversion reduces overall binary weight by up to 50%-70% without sacrificing visual fidelity.
+
+- **Prioritization (ICE):**
+  - **Impact:** 8 (Shaves megabytes of uncompressed weight off network transactions)
+  - **Confidence:** 10 (Compression savings ratios are mathematically guaranteed)
+  - **Ease:** 6 (Can be streamlined at the media edge routing layer or server image CDN filters)
+  - **ICE Score:** 480
