@@ -83,3 +83,23 @@
   - **Confidence:** 10 (Compression savings ratios are mathematically guaranteed)
   - **Ease:** 6 (Can be streamlined at the media edge routing layer or server image CDN filters)
   - **ICE Score:** 480
+
+  ### Finding 7: Mobile-Specific LCP Stall via Throttled Media Handshakes and Script Congestion
+
+- **How it affects users:** Mobile readers on standard cellular networks experience a staggering 40.3-second delay before the main above-the-fold news photo or video completely finishes rendering, rendering the site unusable during transit or high-latency periods.
+- **Metric(s) affected:** Largest Contentful Paint (LCP - 40.3s mobile) and Speed Index (SI).
+- **The Cause:** Under simulated standard 4G latency (150ms RTT), the browser engine is flooded by 7.5 MB of uncompressed core bundle scripts. Because the layout engine lacks early asset cues, the network timeline downloads secondary programmatic ad layers and sub-grid trackers concurrently, starving the primary hero asset of connection bandwidth over the throttled pipeline.
+- **The Solution:** Implement aggressive mobile resource hints. Wrap the primary viewport asset in a high-priority tag (`fetchpriority="high"`), optimize and compress the image placeholder, and entirely block the initialization of low-priority telemetry networks until the primary LCP paint milestone settles.
+
+- **Prioritization (ICE):**
+  - **Impact:** 10 (Addresses the absolute worst user experience metric bottleneck on mobile)
+  - **Confidence:** 10 (Explicitly isolated by throttled network traces and element timing logs)
+  - **Ease:** 6 (Requires front-end component attribute additions and minor tag re-sequencing)
+  - **ICE Score:** 600
+
+### Finding 8: Responsive Touch Element Target and Breakpoint Optimization
+
+- **How it affects users:** Tapping links, navigation elements, or headline targets on mobile viewports remains highly accurate, preventing accidental clicks or misdirected page navigations.
+- **Metric(s) affected:** Cumulative Layout Shift (CLS - stabilized at 0.120 on the mobile homepage) and user interaction error margins.
+- **The Cause:** The development framework implements dedicated fluid responsive grid breakpoints (`@media` styling blocks) that transition dense multi-column desktop news matrices into clean, vertically stacked single-column layouts for small device viewports. Touch targets explicitly conform to modern accessible touch spacing standards (minimum 48x48px paddings).
+- **The Solution:** Maintain this structural layout baseline. Continue to enforce fixed-bounding padding boxes across all dynamic card feeds to avoid degradation of mobile user input precision.

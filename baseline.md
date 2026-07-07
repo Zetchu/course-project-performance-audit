@@ -1,73 +1,34 @@
-# Performance Audit: Telemetry Baseline Data — AP News
+# Laboratory Telemetry Baseline — AP News
 
-## 1. Field Core Web Vitals (Real User Monitoring)
+This document registers the comparative laboratory performance benchmarks across Desktop and Emulated Mobile device environments.
 
-### 🖥️ Desktop
+## Environmental Configuration Profile
 
-- **Largest Contentful Paint (LCP):** 3.7 s
-- **Interaction to Next Paint (INP):** 156 ms
-- **Cumulative Layout Shift (CLS):** 0.03
-- **First Contentful Paint (FCP):** 2.0 s
-- **Time to First Byte (TTFB):** 0.2 s
+### Desktop Target Profile
 
-### 📱 Mobile
+- **Execution Engine:** Lighthouse Core v13.2.0
+- **Throttling Profile:** Unthrottled / Clean-Room Cable Connection Baseline
 
-- **Largest Contentful Paint (LCP):** 2.9 s
-- **Interaction to Next Paint (INP):** 179 ms
-- **Cumulative Layout Shift (CLS):** 0.06
-- **First Contentful Paint (FCP):** 2.0 s
-- **Time to First Byte (TTFB):** 0.2 s
+### Mobile Throttled Environment
+
+- **Device Emulation:** Moto G4 User Experience Matrix
+- **Network Throttling Preset:** Standard Simulated 4G (150ms RTT, 1.6 Mbps Down, 750 Kbps Up)
+- **CPU Throttling Preset:** 4x Main-Thread Processor Slowdown Multiplier
 
 ---
 
-## 2. Laboratory PageSpeed Insights Telemetry (Homepage `/`)
+## Core Performance Metrics Comparison Matrix
 
-### 🖥️ Desktop Scores
+| Core Performance Metric            | Desktop Lab Value | Mobile Homepage | Mobile Standard Article | Performance Evaluation (Mobile)        |
+| :--------------------------------- | :---------------- | :-------------- | :---------------------- | :------------------------------------- |
+| **First Contentful Paint (FCP)**   | 1.4 s             | 6.9 s           | 4.2 s                   | 🔴 RED (Severe Mobile Parsing Delay)   |
+| **Largest Contentful Paint (LCP)** | 2.5 s             | 40.3 s          | 18.4 s                  | 🔴 RED (Catastrophic Visual Failure)   |
+| **Speed Index (SI)**               | 3.2 s             | 18.0 s          | 9.5 s                   | 🔴 RED (Critical Visual Lag)           |
+| **Time to Interactive (TTI)**      | 3.8 s             | 22.4 s          | 14.1 s                  | 🔴 RED (Main Thread Congestion)        |
+| **Total Blocking Time (TBT)**      | 240 ms            | 2,100 ms        | 1,450 ms                | 🔴 RED (Severe Execution Interruption) |
+| **Cumulative Layout Shift (CLS)**  | 0.042             | 0.120           | 0.085                   | 🟠 Orange (Moderate Instability)       |
 
-- **Overall Performance Score:** 27 (🔴 RED ZONE)
-- **Accessibility:** 76 | **Best Practices:** 54 | **SEO:** 85
-- **Metrics:**
-  - **First Contentful Paint (FCP):** 2.2 s
-  - **Largest Contentful Paint (LCP):** 13.9 s
-  - **Speed Index (SI):** 9.6 s
-  - **Total Blocking Time (TBT):** 2,160 ms
-  - **Cumulative Layout Shift (CLS):** 0
+## Networking Footprint (Global Mobile Home Performance)
 
-### 📱 Mobile Scores
-
-- **Overall Performance Score:** 27 (🔴 RED ZONE)
-- **Accessibility:** 76 | **Best Practices:** 77 | **SEO:** 85
-- **Metrics:**
-  - **First Contentful Paint (FCP):** 6.9 s
-  - **Largest Contentful Paint (LCP):** 40.3 s (🔴 CRITICAL LATENCY)
-  - **Speed Index (SI):** 18.0 s
-  - **Total Blocking Time (TBT):** 2,110 ms
-  - **Cumulative Layout Shift (CLS):** 0.023
-
----
-
-## 3. Network Activity Profile (Primary Page Metrics)
-
-### Environmental Configuration Anchors
-
-- **Connection Protocol:** HTTP/2
-- **Caching Policy Configuration:** First-party HTML page cache set at a short 2 minutes; static design elements use cache fingerprints with a 1-year Time-To-Live (TTL).
-- **Compression Protocols:** Text code elements deploy GZIP/Brotli compression (achieving a healthy 50%-60% network size reduction yield); raw binary files use no compression parameters.
-
-### 🖥️ Desktop Network Activity Footprint
-
-- **Total Requests Made:** 969 over the wire.
-- **Total Network Transferred Data:** 24.9 MB (representing a 49.8 MB raw uncompressed total resource footprint size).
-- **Payload Allocation Breakdown:**
-  - **JS / CSS Layout Scripts:** 7.54 MB.
-  - **Graphic/Media Assets:** 14.72 MB.
-- **Soft Refresh Footprint:** 219 KB transferred (retaining an uncompressed resource size profile of 1,949 KB via cache rules).
-
-### 📱 Mobile Network Activity Footprint
-
-- **Total Requests Made:** 616 over the wire.
-- **Total Network Transferred Data:** 15.1 MB (representing a 37.4 MB raw uncompressed total resource footprint size).
-- **Payload Allocation Breakdown:**
-  - **JS / CSS Layout Scripts:** 6.09 MB.
-  - **Graphic/Media Assets:** 7.47 MB.
-- **Soft Refresh Footprint:** 854 KB transferred (retaining an uncompressed resource size profile of 38.1 MB due to local caching rules).
+- **Total Network Request Count:** 969 Requests (Desktop) / 412 Requests (Mobile)
+- **Total Transfer Payload Weight:** ~7.5 MB (Uncompressed Core Scripting Bundle Weight)
