@@ -139,3 +139,39 @@
   - **Confidence:** 10 (Isolated directly via unthrottled thread execution block metrics)
   - **Ease:** 7 (Can be adjusted swiftly inside the platform's Tag Manager pipeline configuration)
   - **ICE Score:** 630
+
+### Finding 12: Inlined Critical CSS Absence & Massive Code Waste (Coverage)
+
+- **How it affects users:** Mobile readers on cellular networks stare at an entirely empty white screen for up to 6.9 seconds, as the browser is blocked from rendering any layout geometry until the monolithic global stylesheet finishes loading.
+- **Metric(s) affected:** First Contentful Paint (FCP - 6.9s) and Largest Contentful Paint (LCP).
+- **The Cause:** The platform lacks a critical CSS extraction pipeline, resulting in 84% unused CSS on initial page load. The browser's parser is forced to download and construct the entire CSSOM for unused styles before rendering the visible above-the-fold viewport.
+- **The Solution:** Configure critical CSS extraction tools (e.g., `Critters` or `Critical`) in the bundler build sequence. Inline the minimal above-the-fold CSS rules directly inside the document `<head>` for instant rendering, and defer the global styles via a non-blocking `<link rel="preload" as="style">` pattern.
+- **Prioritization (ICE):**
+  - **Impact:** 8 (Slashes initial paint delay by unblocking early rendering)
+  - **Confidence:** 10 (Directly backed by mathematical code coverage metrics)
+  - **Ease:** 5 (Requires structural adjustments to the frontend deployment build process)
+  - **ICE Score:** 400
+
+### Finding 13: Main-Thread Layout Thrashing & Framerate Collapse (Flame Chart)
+
+- **How it affects users:** Reading and scrolling down feed pages on mobile feels incredibly choppy, jerky, and unresponsive. Tap gestures on headlines suffer from delayed execution, as the browser freezes under touch inputs.
+- **Metric(s) affected:** Speed Index (SI - 18s mobile) and overall scroll frame rate consistency.
+- **The Cause:** The DevTools Flame Chart reveals severe Layout Thrashing. Scroll listeners and dynamic ad scripts read DOM geometric dimensions immediately after modifying layouts, forcing the browser to continuously recalculate the page geometry on the main thread and drop critical rendering frames.
+- **The Solution:** Implement requestAnimationFrame (rAF) or utilize a virtualized list wrapper to batch and debounce all dynamic read/write interactions with the DOM. Apply CSS `content-visibility: auto` to off-screen elements to skip layout work for modules outside the active viewport.
+- **Prioritization (ICE):**
+  - **Impact:** 9 (Restores scrolling to a fluid, responsive 60fps experience)
+  - **Confidence:** 10 (Confirmed by long red blocks and dropped frames in the Flame Chart)
+  - **Ease:** 4 (Requires refactoring interaction listeners and styling rules)
+  - **ICE Score:** 360
+
+### Finding 14: GPU Memory Saturation & Layout-Driven Animation Jank (Layers)
+
+- **How it affects users:** Navigation menus and tickers stutter during activation. This unnecessary background rendering work causes mobile batteries to drain rapidly and increases device running temperatures.
+- **Metric(s) affected:** First Contentful Paint (FCP) and scroll latency.
+- **The Cause:** Over 280 paint layers are created because `will-change` is overused as a global performance "hack" on static elements. Additionally, primary transitions (like expanding headers) are driven by layout-triggering properties like `height` and `margin`, forcing the browser to repaint the screen on every frame.
+- **The Solution:** Strip redundant `will-change` properties from static list items to free up GPU memory. Refactor UI animations to exclusively transition compositor-only CSS properties, such as `transform` and `opacity`, bypassing the Layout and Paint pipeline entirely.
+- **Prioritization (ICE):**
+  - **Impact:** 7 (Removes visual micro-stuttering and lowers hardware resource strain)
+  - **Confidence:** 10 (Directly verifiable using the DevTools Layers and Paint Profiler tabs)
+  - **Ease:** 8 (Simple, quick CSS rewrite of transitions and layer declarations)
+  - **ICE Score:** 560
