@@ -51,3 +51,24 @@ This document registers the comparative laboratory performance benchmarks across
 - **Paint Layer Count:** Over **280 independent compositor layers** are generated during initial page assembly.
 - **Forced Layering (Hacks):** The build framework artificially forces a massive layer explosion by assigning hardware-acceleration properties like `will-change: transform` and `transform: translate3d(0,0,0)` to nearly every nested card wrapper in the feed grids, saturating GPU memory.
 - **Animation Triggers & Jank:** The main navigation dropdowns and sliding breaking-news tickers suffer from severe first-frame jank. The Performance panel shows these animations are driven by non-compositor triggers (such as mutating raw `height`, `margin-top`, and `display` values), forcing the rendering pipeline to completely recalculate Layout, Paint, and Composite steps on every single frame.
+
+## Rendering Strategy Analysis — AP News
+
+The AP News platform employs a hybrid architectural rendering model combining Server-Side Rendering (SSR) for editorial content with Client-Side Rendering (CSR) for dynamic feeds, search functions, and interactive widgets.
+
+### Rendering Strategies by Page Type
+
+1. **Domain Homepage & Standard Article Nodes (Hybrid SSR + Heavy Hydration)**
+   - **Strategy:** The server pre-renders raw HTML (SSR), dispatching it immediately over the network. Once the client browser parses this shell, a monolithic React/Next.js hydration bundle takes over to attach active event listeners, dynamic advertisement modules, and personalized content grids.
+   - **User Impact & Tradeoffs:** While SSR delivers markup to the browser quickly, the heavy client-side hydration payload (~7.5 MB of uncompressed JavaScript) causes a catastrophic "uncanny valley" effect. The page appears visually populated, but the UI is completely unresponsive to touches, clicks, or scrolls for several seconds while the main thread is hijacked by hydration compilation loops.
+   - **Assessment:** SSR is a standard choice for SEO-sensitive news hubs, but pairing it with massive, un-split client-side hydration is highly inefficient. The best architectural choice would be **Static Site Generation (SSG) with Partial Hydration (Islands Architecture)**, which renders interactive components (like login forms or live widgets) in isolation without hydrating the static body text.
+
+2. **FIFA World Cup Live Hub & Sports Feeds (SSR + CSR Polling)**
+   - **Strategy:** SSR builds the baseline template container, but client-side script layers (CSR) continually poll background APIs to inject live scoreboards, active match stats, and real-time commentary directly into the DOM.
+   - **User Impact & Tradeoffs:** Users receive instant, live data updates without manual page refreshes. However, the continuous, un-throttled client-side rendering loops trigger severe CPU exhaustion on mobile devices. The constant DOM insertions force layout recalculation cascades on a loop, generating intense stuttering and jank during viewport scrolls.
+   - **Assessment:** A dynamic live feed requires a real-time updating architecture. However, relying on continuous client-side DOM polling and re-renders is a poor implementation. The ideal choice is server-sent events (SSE) or WebSockets paired with a virtual DOM diffing algorithm to ensure only updated score items re-render.
+
+3. **Interactive Hub Quizzes & Search Results Matrix (Client-Side Rendering — CSR)**
+   - **Strategy:** These pathways are completely rendered in the user's browser. The initial server delivery is a bare HTML shell, and JavaScript scripts fetch, build, and paint the entire layout dynamically.
+   - **User Impact & Tradeoffs:** Because there is no pre-rendered content, users stare at a blank loader screen for up to 6.9 seconds on throttled 4G connections. However, once the JS application is fully booted in memory, transitions, quiz questions, and state updates occur without any additional page transitions.
+   - **Assessment:** CSR is appropriate for highly interactive dashboards (like quizzes) where SEO indexation is not required. However, for search result pages, a server-generated search feed would offer a much more responsive initial experience.

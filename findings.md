@@ -175,3 +175,27 @@
   - **Confidence:** 10 (Directly verifiable using the DevTools Layers and Paint Profiler tabs)
   - **Ease:** 8 (Simple, quick CSS rewrite of transitions and layer declarations)
   - **ICE Score:** 560
+
+### Finding 15: Monolithic Client-Side Hydration Delay on SSR News Nodes (The "Uncanny Valley")
+
+- **How it affects users:** The website appears visually complete, but feels entirely broken, frozen, or laggy if the user attempts to scroll the news article or tap any menu navigation triggers immediately upon load.
+- **Metric(s) affected:** Time to Interactive (TTI - 22.4s mobile) and Total Blocking Time (TBT - 2,100ms).
+- **The Cause:** Although the server dispatches pre-rendered HTML (SSR), the framework executes a monolithic hydration cycle. The browser's V8 engine must parse, compile, and execute the massive ~7.5 MB JavaScript bundle to match the server markup state, keeping the main thread fully congested.
+- **The Solution:** Transition from full page hydration to **Partial Hydration (Islands Architecture)** or employ **React Server Components (RSC)**. Ensure that static textual layout blocks do not ship client-side JavaScript, executing hydration loops strictly on isolated, interactive widgets (e.g., search buttons, comment modules).
+- **Prioritization (ICE):**
+  - **Impact:** 9 (Recovers massive main-thread interactive capacity on mobile devices)
+  - **Confidence:** 10 (Throttled TTI metric runs confirm the severe gap between paint and interaction)
+  - **Ease:** 3 (Requires a significant structural migration of the frontend framework architecture)
+  - **ICE Score:** 270
+
+### Finding 16: Blocker-Prone Client-Side Rendering (CSR) on Core Dynamic Matrix Routes
+
+- **How it affects users:** Visitors navigating to interactive sections, quizzes, or search matrices are greeted by a blank loader screen for several seconds, significantly increasing early bounce rates.
+- **Metric(s) affected:** First Contentful Paint (FCP - 6.9s mobile) and Largest Contentful Paint (LCP - 40.3s mobile).
+- **The Cause:** High-utility routes (like dynamic search and category grids) are delivered as empty HTML templates reliant on client-side rendering (CSR). Since no layout elements are pre-built on the server, visual rendering is entirely blocked until the massive client-side bundles are downloaded, parsed, and executed.
+- **The Solution:** Implement **Server-Side Rendering (SSR)** or **Incremental Static Regeneration (ISR)** for high-priority dynamic listings. By generating standard search query layouts or grid feeds directly at the edge nodes, the client browser can paint critical content immediately without waiting for client JavaScript execution.
+- **Prioritization (ICE):**
+  - **Impact:** 8 (Slashes initial loading delay and blank screen states on critical routes)
+  - **Confidence:** 10 (Mathematical certainty that server-rendered shells eliminate the 6.9s initial wait)
+  - **Ease:** 4 (Requires refactoring dynamic pages to compile layouts in the backend layer)
+  - **ICE Score:** 320
