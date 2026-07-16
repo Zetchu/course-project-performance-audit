@@ -103,3 +103,39 @@
 - **Metric(s) affected:** Cumulative Layout Shift (CLS - stabilized at 0.120 on the mobile homepage) and user interaction error margins.
 - **The Cause:** The development framework implements dedicated fluid responsive grid breakpoints (`@media` styling blocks) that transition dense multi-column desktop news matrices into clean, vertically stacked single-column layouts for small device viewports. Touch targets explicitly conform to modern accessible touch spacing standards (minimum 48x48px paddings).
 - **The Solution:** Maintain this structural layout baseline. Continue to enforce fixed-bounding padding boxes across all dynamic card feeds to avoid degradation of mobile user input precision.
+
+### Finding 9: Catastrophic Main-Thread Freeze via Monolithic JavaScript Bundling
+
+- **How it affects users:** The initial user interaction paths completely lock up. Tapping breaking headers or sliding navigational carousels feels unresponsive, causing users to perceive the application as broken or stuck.
+- **Metric(s) affected:** Total Blocking Time (TBT - 2,100ms) and Time to Interactive (TTI - 22.4s).
+- **The Cause:** The platform relies on a monolithic bundling setup that outputs a dense ~7.5 MB uncompressed script layer upfront. The V8 JavaScript compilation engine running under a 4x CPU mobile slowdown multiplier must parse, resolve, and evaluate massive sections of non-critical layout code before freeing up the interaction loops.
+- **The Solution:** Implement aggressive route-based code splitting and dynamic async chunk imports via your bundler (Webpack/Vite). Isolate and bundle core engine routing dependencies exclusively, lazy-loading component logic blocks only as those layout segments enter the viewport.
+- **Prioritization (ICE):**
+  - **Impact:** 9 (Directly frees up main thread execution blocks)
+  - **Confidence:** 10 (Backed cleanly by Lighthouse CPU execution trace telemetry)
+  - **Ease:** 4 (Requires structural configuration overhauls to the build pipeline dependencies)
+  - **ICE Score:** 360
+
+### Finding 10: Render-Blocking Overhead from Unsplit Global Stylesheets
+
+- **How it affects users:** Mobile devices remain stuck on an empty white canvas for an extended duration, as the browser is explicitly restricted from drawing early layout lines.
+- **Metric(s) affected:** First Contentful Paint (FCP - 6.9s mobile) and Speed Index (SI - 18.0s mobile).
+- **The Cause:** Global layout styling targets are compiled into a single massive spreadsheet, with over 78% of the data verified as unused during initial homepage construction. The browser is forced to complete a full download and build out the complete CSSOM framework before it can execute its first render paint.
+- **The Solution:** Implement automated critical CSS extraction plugins in the build configuration to pull only the formatting required for above-the-fold content blocks. Inline those critical styles directly inside the document `<head>`, and defer loading the primary global asset stylesheet using non-blocking asynchronous links.
+- **Prioritization (ICE):**
+  - **Impact:** 8 (Slashes the initial paint startup latency significantly)
+  - **Confidence:** 9 (Infallible industry path for accelerating early painting timelines)
+  - **Ease:** 5 (Demands configuring automated extraction steps within the asset build lifecycle)
+  - **ICE Score:** 360
+
+### Finding 11: Main-Thread CPU Hijacking via Teads Rich-Media Ad Script Bundles
+
+- **How it affects users:** Device temperatures climb noticeably, mobile battery capacity drains rapidly, and smooth scrolling drops frames—causing choppy, stuttering movement across article feeds.
+- **Metric(s) affected:** Speed Index (SI), Total Blocking Time (TBT), and client-side scroll frame rate consistency.
+- **The Cause:** Heavy programmatic display advertisement frameworks (specifically the third-party Teads rich-media video asset manager bundle) are loaded inline. This script uncompresses directly inside the main thread, contextually executing heavy background processing tasks that block the layout rendering loops.
+- **The Solution:** Move heavy programmatic tracking frameworks out of the synchronous document parsing path. Wrap these third-party display networks in lazy Intersection Observers, triggering script compilation and network fetches only after the layout slots approach the active viewport area.
+- **Prioritization (ICE):**
+  - **Impact:** 9 (Reclaims valuable main-thread CPU capacity on mid-tier mobile hardware)
+  - **Confidence:** 10 (Isolated directly via unthrottled thread execution block metrics)
+  - **Ease:** 7 (Can be adjusted swiftly inside the platform's Tag Manager pipeline configuration)
+  - **ICE Score:** 630
